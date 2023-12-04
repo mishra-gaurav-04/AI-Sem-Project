@@ -24,6 +24,7 @@ path_saved_model = args["model"]
 threshold = args["conf"]
 save = args['save']
 
+##############
 torso_size_multiplier = 2.5
 n_landmarks = 33
 n_dimensions = 3
@@ -65,6 +66,7 @@ for i in range(n_landmarks):
     col_names.append(name_y)
     col_names.append(name_z)
     col_names.append(name_v)
+
 
 model = load_model(path_saved_model, compile=True)
 
@@ -134,6 +136,7 @@ else:
     cap = cv2.VideoCapture(source)
     source_width = int(cap.get(3))
     source_height = int(cap.get(4))
+
     if save:
         out_video = cv2.VideoWriter('output.avi', 
                             cv2.VideoWriter_fourcc(*'MJPG'),
@@ -150,7 +153,7 @@ else:
         if result.pose_landmarks:
             lm_list = []
             for landmarks in result.pose_landmarks.landmark:
-                # Preprocessing
+                
                 max_distance = 0
                 lm_list.append(landmarks)
             center_x = (lm_list[landmark_names.index('right_hip')].x +
@@ -176,7 +179,13 @@ else:
                                      landmark.z/max_distance, landmark.visibility] for landmark in lm_list]).flatten())
             data = pd.DataFrame([pre_lm], columns=col_names)
             predict = model.predict(data)[0]
-           
+            if max(predict) > threshold:
+                pose_class = class_names[predict.argmax()]
+                print('predictions: ', predict)
+                print('predicted Pose Class: ', pose_class)
+            else:
+                pose_class = 'Unknown Pose'
+                print('[INFO] Predictions is below given Confidence!!')
 
             img = cv2.putText(
                 img, f'{pose_class}',
